@@ -31,4 +31,17 @@ public static class Constants
         { 'Y', 4 },
         { 'Z', 10 }
     };
+
+    public enum DieColor
+    {
+        White,
+        Gray,
+        Black,
+        Red,
+        Yellow,
+        Blue,
+        Green,
+        Purple,
+        Orange
+    }
 }
