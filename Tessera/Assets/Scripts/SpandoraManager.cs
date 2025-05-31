@@ -250,6 +250,13 @@ public class SpandoraManager : MonoBehaviour
 
                 GameObject textCenter = letterDie.transform.Find("DieCanvas/TextCenter").gameObject;
                 textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
+                Color32 dieLetterColor = new Color32(
+                    Constants.ColorBytes[dieFace.letterColor][0],
+                    Constants.ColorBytes[dieFace.letterColor][1],
+                    Constants.ColorBytes[dieFace.letterColor][2],
+                    0x96
+                );
+                textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
                 GameObject textBottom = letterDie.transform.Find("DieCanvas/TextBottom").gameObject;
                 textBottom.GetComponent<TMP_Text>().text = dieFace.faceValue.ToString();
                 GameObject hitbox = letterDie.transform.Find("DieFaceCollider").gameObject;

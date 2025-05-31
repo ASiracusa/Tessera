@@ -45,6 +45,18 @@ public static class Constants
         Orange
     }
 
+    public static readonly Dictionary<DieColor, byte[]> ColorBytes = new Dictionary<DieColor, byte[]> {
+        { DieColor.White, new [] { (byte)0xFF, (byte)0xFF, (byte)0xFF }},
+        { DieColor.Gray, new [] { (byte)0x80, (byte)0x80, (byte)0x80 }},
+        { DieColor.Black, new [] { (byte)0x00, (byte)0x00, (byte)0x00 }},
+        { DieColor.Red, new [] { (byte)0xE0, (byte)0x0D, (byte)0x3B }},
+        { DieColor.Yellow, new [] { (byte)0xDE, (byte)0xAA, (byte)0x11 }},
+        { DieColor.Blue, new [] { (byte)0x0D, (byte)0x5E, (byte)0xE0 }},
+        { DieColor.Green, new [] { (byte)0x24, (byte)0xB0, (byte)0x43 }},
+        { DieColor.Purple, new [] { (byte)0x8C, (byte)0x0D, (byte)0xE0 }},
+        { DieColor.Orange, new [] { (byte)0xE0, (byte)0x69, (byte)0x0D }}
+    };
+
     public enum WordValidity
     {
         Invalid,
