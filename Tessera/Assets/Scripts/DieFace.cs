@@ -5,12 +5,10 @@ public class DieFace
 {
     public Constants.DieColor letterColor;
     public string faceText;
-    public int faceValue;
 
-    public DieFace(Constants.DieColor letterColor, string faceText, int faceValue)
+    public DieFace(Constants.DieColor letterColor, string faceText)
     {
         this.letterColor = letterColor;
         this.faceText = faceText;
-        this.faceValue = faceValue;
     }
 }

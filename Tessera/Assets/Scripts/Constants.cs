@@ -32,6 +32,20 @@ public static class Constants
         { 'Z', 10 }
     };
 
+    public static readonly int[] LENGTH_MULTS = new int[] {
+        0,
+        0,
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        10,
+        15,
+        20
+    };
+
     public enum DieColor
     {
         White,

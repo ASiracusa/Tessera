@@ -13,10 +13,12 @@ public class SpandoraManager : MonoBehaviour
 
     private GameObject bottomRoot;
     private GameObject dieRoot;
-    private GameObject currWordTextObject;
+    private GameObject basePointsTextObject;
+    private GameObject multPointsTextObject;
 
     private List<int> spanPoses;
     private string currWordText;
+    private int currWordScore;
     private List<string> spelledWords;
     private WordValidity validWord;
 
@@ -29,7 +31,6 @@ public class SpandoraManager : MonoBehaviour
     {
         bottomRoot = GameObject.Find("BottomAnchor");
         dieRoot = GameObject.Find("BottomAnchor/DieRoot");
-        currWordTextObject = GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText");
 
         spanPoses = new List<int>();
         spelledWords = new List<string>();
@@ -72,9 +73,6 @@ public class SpandoraManager : MonoBehaviour
             {
                 int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
                 spanPoses.Add(diePos);
-                Die currDie = diceData[diePos];
-                currWordText = currDie.faces[currDie.currFace].faceText;
-                currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
                 CheckWord();
             }
         }
@@ -93,15 +91,10 @@ public class SpandoraManager : MonoBehaviour
                         if (!spanPoses.Contains(diePos))
                         {
                             spanPoses.Add(diePos);
-                            Die currDie = diceData[diePos];
-                            currWordText = currWordText + currDie.faces[currDie.currFace].faceText;
-                            currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
                         }
                         else if (spanPoses.Count > 1 && diePos == spanPoses[^2])
                         {
                             spanPoses.RemoveAt(spanPoses.Count - 1);
-                            currWordText = currWordText.Substring(0, currWordText.Length - 1);
-                            currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
                         }
                     }
                     CheckWord();
@@ -119,7 +112,7 @@ public class SpandoraManager : MonoBehaviour
 
     private void AttemptWord ()
     {
-        CheckWord();
+        
         if (validWord == WordValidity.New)
         {
             spelledWords.Add(currWordText);
@@ -127,12 +120,34 @@ public class SpandoraManager : MonoBehaviour
 
         spanPoses.Clear();
         currWordText = "";
-        currWordTextObject.GetComponent<TMP_Text>().text = "";
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText").GetComponent<TMP_Text>().text = "";
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrScoreRoot").SetActive(false);
         validWord = WordValidity.Invalid;
     }
 
     private void CheckWord ()
     {
+        // Concatenate word and evaluate score
+        currWordText = "";
+        int basePoints = 0;
+        int multPoints = Constants.LENGTH_MULTS[Mathf.Min(10, spanPoses.Count)];
+        foreach (int diePos in spanPoses)
+        {
+            Die die = diceData[diePos];
+            DieFace dieFace = die.faces[die.currFace];
+            currWordText = currWordText + dieFace.faceText;
+            basePoints += die.rank * Constants.TILE_VALUES[dieFace.faceText[0]];
+            if (dieFace.letterColor == DieColor.Red)
+            {
+                multPoints += Constants.TILE_VALUES[dieFace.faceText[0]];
+            }
+        }
+        currWordScore = basePoints * multPoints;
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText").GetComponent<TMP_Text>().text = currWordText;
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrScoreRoot/ScoreBaseText").GetComponent<TMP_Text>().text = basePoints.ToString();
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrScoreRoot/ScoreMultText").GetComponent<TMP_Text>().text = multPoints.ToString();
+
+        // Check word validity
         if (currWordText.Length < 3)
         {
             validWord = WordValidity.Invalid;
@@ -145,10 +160,14 @@ public class SpandoraManager : MonoBehaviour
                 WordValidity.New;
         }
         
+        // Color word based on validity
         byte wordOpacity = validWord == WordValidity.Invalid ? (byte) 0x30 : 
             validWord == WordValidity.Found ? (byte) 0xA0 : 
             (byte) 0xFF;
-        currWordTextObject.GetComponent<TMP_Text>().faceColor = new Color32(0xFF, 0xFF, 0xFF, wordOpacity);
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText").GetComponent<TMP_Text>().faceColor = new Color32(0xFF, 0xFF, 0xFF, wordOpacity);
+
+        // Hide/show score based on validity
+        GameObject.Find("BottomAnchor/CurrWordCanvas/CurrScoreRoot").SetActive(validWord == WordValidity.New);
     }
 
     private void GenerateDictionary ()
@@ -209,11 +228,11 @@ public class SpandoraManager : MonoBehaviour
             }
             
             DieFace[] dieFaces = new DieFace[] {
-                new DieFace(letterDiePreset.letterColors[0], chosenLetters[0], Constants.TILE_VALUES[chosenLetters[0][0]]),
-                new DieFace(letterDiePreset.letterColors[1], chosenLetters[1], Constants.TILE_VALUES[chosenLetters[1][0]]),
-                new DieFace(letterDiePreset.letterColors[2], chosenLetters[2], Constants.TILE_VALUES[chosenLetters[2][0]])
+                new DieFace(letterDiePreset.letterColors[0], chosenLetters[0]),
+                new DieFace(letterDiePreset.letterColors[1], chosenLetters[1]),
+                new DieFace(letterDiePreset.letterColors[2], chosenLetters[2])
             };
-            Die die = new Die(DieColor.Gray, 0, dieFaces);
+            Die die = new Die(DieColor.Gray, 0, dieFaces, 1);
             diceData.Add(die);
         }
     }
@@ -258,7 +277,7 @@ public class SpandoraManager : MonoBehaviour
                 );
                 textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
                 GameObject textBottom = letterDie.transform.Find("DieCanvas/TextBottom").gameObject;
-                textBottom.GetComponent<TMP_Text>().text = dieFace.faceValue.ToString();
+                textBottom.GetComponent<TMP_Text>().text = (die.rank * Constants.TILE_VALUES[dieFace.faceText[0]]).ToString();
                 GameObject hitbox = letterDie.transform.Find("DieFaceCollider").gameObject;
                 hitbox.GetComponent<DieFaceData>().diePos = diePos;
 
