@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+using System.IO;
 using System.Collections.Generic;
 using TMPro;
 using static Constants;
@@ -19,8 +21,12 @@ public class SpandoraManager : MonoBehaviour
     private List<GameObject> diceObjects;
     private List<Die> diceData;
 
+    private string[] fullDictionary;
+
     private void Start()
     {
+        GenerateDictionary();
+
         bottomRoot = GameObject.Find("BottomAnchor");
         currWordTextObject = GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText");
 
@@ -34,7 +40,7 @@ public class SpandoraManager : MonoBehaviour
         {
             for (int c = 2; c >= -2; c--)
             {
-                int letterInd = Random.Range(0,26);
+                int letterInd = UnityEngine.Random.Range(0,26);
                 char letter = (char) (65 + letterInd);
                 int letterVal = Constants.TILE_VALUES[letter];
                 DieFace dieFace = new DieFace(DieColor.White, letter.ToString(), letterVal);
@@ -144,12 +150,45 @@ public class SpandoraManager : MonoBehaviour
 
     private void CheckWord ()
     {
-        validWord = currWordText.Length < 3 ? WordValidity.Invalid : 
-            spelledWords.Contains(currWordText) ? WordValidity.Found : 
-            WordValidity.New;
-        byte wordOpacity = validWord == WordValidity.Invalid ? (byte) 0x55 : 
-            validWord == WordValidity.Found ? (byte) 0xAA : 
+        if (currWordText.Length < 3)
+        {
+            validWord = WordValidity.Invalid;
+        }
+        else
+        {
+            int wordIndex = Array.BinarySearch(fullDictionary, currWordText);
+            validWord = wordIndex < 0 ? WordValidity.Invalid : 
+                spelledWords.Contains(currWordText) ? WordValidity.Found : 
+                WordValidity.New;
+        }
+        
+        byte wordOpacity = validWord == WordValidity.Invalid ? (byte) 0x30 : 
+            validWord == WordValidity.Found ? (byte) 0xA0 : 
             (byte) 0xFF;
         currWordTextObject.GetComponent<TMP_Text>().faceColor = new Color32(0xFF, 0xFF, 0xFF, wordOpacity);
+    }
+
+    private void GenerateDictionary ()
+    {
+        try
+        {
+            fullDictionary = new string[279496];
+            string dictPath = "Assets/Resources/FullDictionary.txt";
+            using (StreamReader sr = new StreamReader(dictPath))
+            {
+                string line;
+                int index = 0;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    fullDictionary[index] = line.ToUpper();
+                    index++;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("The file could not be read:");
+            Debug.Log(e.Message);
+        }
     }
 }
