@@ -81,12 +81,21 @@ public class SpandoraManager : MonoBehaviour
                 if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, LayerMask.GetMask("TileFace")))
                 {
                     int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
-                    if (!spanPoses.Contains(diePos) && IsAdjacent(diePos, spanPoses[^1]))
+                    if (IsAdjacent(diePos, spanPoses[^1]))
                     {
-                        spanPoses.Add(diePos);
-                        Die currDie = diceData[diePos];
-                        currWordText = currWordText + currDie.faces[currDie.currFace].faceText;
-                        currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
+                        if (!spanPoses.Contains(diePos))
+                        {
+                            spanPoses.Add(diePos);
+                            Die currDie = diceData[diePos];
+                            currWordText = currWordText + currDie.faces[currDie.currFace].faceText;
+                            currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
+                        }
+                        else if (spanPoses.Count > 1 && diePos == spanPoses[^2])
+                        {
+                            spanPoses.RemoveAt(spanPoses.Count - 1);
+                            currWordText = currWordText.Substring(0, currWordText.Length - 1);
+                            currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
+                        }
                     }
                 }
             }
