@@ -51,4 +51,78 @@ public static class Constants
         Found,
         New
     }
+
+    public enum RepetitionType
+    {
+        AllUnique,
+        AllSame,
+        Random
+    }
+
+    public enum LetterDiePresetType
+    {
+        CommonVowels,
+        LessCommonVowels,
+        CommonVowelsOneColor,
+        OneVowelThreeColors,
+        ThreeVowelsOneColor,
+        CommonConsonants,
+        LessCommonConsonants,
+        CommonConsonantsOneColor,
+        OneConsonantThreeColors,
+        ThreeConsonantsOneColor,
+        TwoThreePointLetters,
+        ThreeFourPointLetters,
+        FourFivePointLetters,
+        MidValueOneColor,
+        RareLetters,
+        RandomLetters
+    }
+
+    public static readonly Dictionary<LetterDiePresetType, LetterDiePreset> LETTER_DIE_PRESETS = new Dictionary<LetterDiePresetType, LetterDiePreset> {
+        {LetterDiePresetType.CommonVowels, new LetterDiePreset("EEEEAAAIIIOOU", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.LessCommonVowels, new LetterDiePreset("UUUUOOOAAIIE", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.CommonVowelsOneColor, new LetterDiePreset("EEEEAAAIIIOOU", RepetitionType.AllUnique, new []{DieColor.Red, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.OneVowelThreeColors, new LetterDiePreset("EEEEAAAIIIOOU", RepetitionType.AllSame, new []{DieColor.Red, DieColor.Yellow, DieColor.Blue})},
+        {LetterDiePresetType.ThreeVowelsOneColor, new LetterDiePreset("EEEEAAAIIIOOU", RepetitionType.AllUnique, new []{DieColor.Red, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.CommonConsonants, new LetterDiePreset("TTTTNNNSSSRRLL", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.LessCommonConsonants, new LetterDiePreset("DDDDGGGGLLLRRRSSNNT", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.CommonConsonantsOneColor, new LetterDiePreset("TTTTNNNSSSRRLL", RepetitionType.AllUnique, new []{DieColor.Red, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.OneConsonantThreeColors, new LetterDiePreset("TTTTNNNSSSRRLL", RepetitionType.AllSame, new []{DieColor.Red, DieColor.Yellow, DieColor.Blue})},
+        {LetterDiePresetType.ThreeConsonantsOneColor, new LetterDiePreset("TTTTNNNSSSRRLL", RepetitionType.AllUnique, new []{DieColor.Red, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.TwoThreePointLetters, new LetterDiePreset("DDDDGGGGBBCCMMPP", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.ThreeFourPointLetters, new LetterDiePreset("BBBBBCCCCCMMMMMPPPPPFFFFHHHHVVVVWWWWYYYY", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.FourFivePointLetters, new LetterDiePreset("KKKKKFFFHHHVVVWWWYYY", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.MidValueOneColor, new LetterDiePreset("TNSRLDGBCMPFHVWYK", RepetitionType.AllUnique, new []{DieColor.Red, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.RareLetters, new LetterDiePreset("XXXXXXJJJJQQQQZZZZ", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
+        {LetterDiePresetType.RandomLetters, new LetterDiePreset("QWERTYUIOPASDFGHJKLZXCVBNM", RepetitionType.Random, new []{DieColor.White, DieColor.White, DieColor.White})},
+    };
+
+    public static readonly LetterDiePresetType[] INITIAL_DICE_PRESET_TYPES = new LetterDiePresetType[] {
+        LetterDiePresetType.CommonVowels,
+        LetterDiePresetType.CommonVowels,
+        LetterDiePresetType.CommonVowels,
+        LetterDiePresetType.LessCommonVowels,
+        LetterDiePresetType.OneVowelThreeColors,
+        LetterDiePresetType.ThreeVowelsOneColor,
+        LetterDiePresetType.CommonConsonants,
+        LetterDiePresetType.CommonConsonants,
+        LetterDiePresetType.CommonConsonants,
+        LetterDiePresetType.LessCommonConsonants,
+        LetterDiePresetType.CommonConsonantsOneColor,
+        LetterDiePresetType.OneConsonantThreeColors,
+        LetterDiePresetType.ThreeConsonantsOneColor,
+        LetterDiePresetType.TwoThreePointLetters,
+        LetterDiePresetType.TwoThreePointLetters,
+        LetterDiePresetType.TwoThreePointLetters,
+        LetterDiePresetType.ThreeFourPointLetters,
+        LetterDiePresetType.ThreeFourPointLetters,
+        LetterDiePresetType.ThreeFourPointLetters,
+        LetterDiePresetType.FourFivePointLetters,
+        LetterDiePresetType.FourFivePointLetters,
+        LetterDiePresetType.MidValueOneColor,
+        LetterDiePresetType.MidValueOneColor,
+        LetterDiePresetType.RareLetters,
+        LetterDiePresetType.RareLetters
+    };
 }

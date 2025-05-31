@@ -3,13 +3,13 @@ using static Constants;
 
 public class DieFace
 {
-    public Constants.DieColor faceColor;
+    public Constants.DieColor letterColor;
     public string faceText;
     public int faceValue;
 
-    public DieFace(Constants.DieColor faceColor, string faceText, int faceValue)
+    public DieFace(Constants.DieColor letterColor, string faceText, int faceValue)
     {
-        this.faceColor = faceColor;
+        this.letterColor = letterColor;
         this.faceText = faceText;
         this.faceValue = faceValue;
     }
