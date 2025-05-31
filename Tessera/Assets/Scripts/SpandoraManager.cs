@@ -13,6 +13,8 @@ public class SpandoraManager : MonoBehaviour
 
     private List<int> spanPoses;
     private string currWordText;
+    private List<string> spelledWords;
+    private WordValidity validWord;
 
     private List<GameObject> diceObjects;
     private List<Die> diceData;
@@ -23,6 +25,7 @@ public class SpandoraManager : MonoBehaviour
         currWordTextObject = GameObject.Find("BottomAnchor/CurrWordCanvas/CurrWordText");
 
         spanPoses = new List<int>();
+        spelledWords = new List<string>();
         diceObjects = new List<GameObject>();
         diceData = new List<Die>();
 
@@ -57,6 +60,20 @@ public class SpandoraManager : MonoBehaviour
 
     void Update()
     {
+        DrawWord();
+    }
+
+    static public bool IsAdjacent (int pos1, int pos2)
+    {
+        int row1 = pos1 / 5;
+        int col1 = pos1 % 5;
+        int row2 = pos2 / 5;
+        int col2 = pos2 % 5;
+        return Mathf.Abs(row1 - row2) <= 1 && Mathf.Abs(col1 - col2) <= 1;
+    }
+
+    private void DrawWord ()
+    {
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -69,6 +86,7 @@ public class SpandoraManager : MonoBehaviour
                 Die currDie = diceData[diePos];
                 currWordText = currDie.faces[currDie.currFace].faceText;
                 currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
+                CheckWord();
             }
         }
         else if (Input.GetMouseButton(0))
@@ -97,6 +115,7 @@ public class SpandoraManager : MonoBehaviour
                             currWordTextObject.GetComponent<TMP_Text>().text = currWordText;
                         }
                     }
+                    CheckWord();
                 }
             }
         }
@@ -104,19 +123,33 @@ public class SpandoraManager : MonoBehaviour
         {
             if (spanPoses.Count != 0) 
             {
-                spanPoses.Clear();
-                currWordText = "";
-                currWordTextObject.GetComponent<TMP_Text>().text = "";
+                AttemptWord();
             }
         }
     }
 
-    static public bool IsAdjacent (int pos1, int pos2)
+    private void AttemptWord ()
     {
-        int row1 = pos1 / 5;
-        int col1 = pos1 % 5;
-        int row2 = pos2 / 5;
-        int col2 = pos2 % 5;
-        return Mathf.Abs(row1 - row2) <= 1 && Mathf.Abs(col1 - col2) <= 1;
+        CheckWord();
+        if (validWord == WordValidity.New)
+        {
+            spelledWords.Add(currWordText);
+        }
+
+        spanPoses.Clear();
+        currWordText = "";
+        currWordTextObject.GetComponent<TMP_Text>().text = "";
+        validWord = WordValidity.Invalid;
+    }
+
+    private void CheckWord ()
+    {
+        validWord = currWordText.Length < 3 ? WordValidity.Invalid : 
+            spelledWords.Contains(currWordText) ? WordValidity.Found : 
+            WordValidity.New;
+        byte wordOpacity = validWord == WordValidity.Invalid ? (byte) 0x55 : 
+            validWord == WordValidity.Found ? (byte) 0xAA : 
+            (byte) 0xFF;
+        currWordTextObject.GetComponent<TMP_Text>().faceColor = new Color32(0xFF, 0xFF, 0xFF, wordOpacity);
     }
 }

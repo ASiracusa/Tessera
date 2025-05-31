@@ -44,4 +44,11 @@ public static class Constants
         Purple,
         Orange
     }
+
+    public enum WordValidity
+    {
+        Invalid,
+        Found,
+        New
+    }
 }
