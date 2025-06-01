@@ -11,6 +11,10 @@ public class SpandoraManager : MonoBehaviour
 {
 
     public GameObject diePrefab;
+    public GameObject tutorialText;
+    public GameObject roundCompleteText;
+    public GameObject gameOverText;
+    public GameObject replayText;
 
     private GameObject bottomRoot;
     private GameObject dieRoot;
@@ -29,6 +33,7 @@ public class SpandoraManager : MonoBehaviour
 
     private string[] fullDictionary;
 
+    private bool inCutscene;
     private int spandoraRound;
     private float roundTimescale;
     private int pointThreshold;
@@ -48,18 +53,20 @@ public class SpandoraManager : MonoBehaviour
         GenerateDictionary();
         GenerateStartingDice();
 
-        spandoraRound = 0;
-        BeginRound();
+        StartCoroutine(StartGame());
     }
 
     void Update()
     {
-        DrawWord();
-
-        if (Input.GetKeyDown("space") && spanPoses.Count == 0)
+        if (!inCutscene)
         {
-            GenerateBoard();
-            roundTimescale += 0.5f;
+            DrawWord();
+
+            if (Input.GetKeyDown(KeyCode.Space) && spanPoses.Count == 0)
+            {
+                GenerateBoard();
+                roundTimescale += 0.5f;
+            }
         }
     }
 
@@ -133,12 +140,12 @@ public class SpandoraManager : MonoBehaviour
                 GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
             }
 
-            pointThreshold -= currWordScore;
+            pointThreshold = Mathf.Max(pointThreshold - currWordScore, 0);
             GameObject.Find("TopAnchor/LidCanvas/ScoreThresholdText").GetComponent<TMP_Text>().text = pointThreshold.ToString();
-            if (pointThreshold <= 0)
+            if (pointThreshold == 0)
             {
                 StopCoroutine(roundCountdownCoroutine);
-                BeginRound();
+                StartCoroutine(RoundComplete());
             }
         }
 
@@ -203,18 +210,8 @@ public class SpandoraManager : MonoBehaviour
     {
         try
         {
-            fullDictionary = new string[279496];
-            string dictPath = "Assets/Resources/FullDictionary.txt";
-            using (StreamReader sr = new StreamReader(dictPath))
-            {
-                string line;
-                int index = 0;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    fullDictionary[index] = line.ToUpper();
-                    index++;
-                }
-            }
+            string textFile = Resources.Load("FullDictionary").ToString();
+            fullDictionary = new List<string>(textFile.Split(new char[] {'\r','\n'},StringSplitOptions.RemoveEmptyEntries)).ToArray();
         }
         catch (Exception e)
         {
@@ -269,8 +266,12 @@ public class SpandoraManager : MonoBehaviour
     private void GenerateBoard ()
     {
         // Remove existing dice GameObjects
-        foreach (Transform child in dieRoot.transform) {
-            GameObject.Destroy(child.gameObject);
+        if (remainingTime > 0)
+        {
+            foreach (Transform child in dieRoot.transform)
+            {
+                Destroy(child.gameObject);
+            }
         }
 
         // Shuffle diceData
@@ -331,6 +332,74 @@ public class SpandoraManager : MonoBehaviour
         StartCoroutine(roundCountdownCoroutine);
     }
 
+    private void EndRound()
+    {
+        GameObject.Find("TopAnchor/LidCanvas/RoundText").GetComponent<TMP_Text>().text = "";
+        GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = "";
+        GameObject.Find("TopAnchor/LidCanvas/ScoreThresholdText").GetComponent<TMP_Text>().text = "";
+
+        // Remove existing dice GameObjects
+        foreach (Transform child in dieRoot.transform) {
+            Destroy(child.gameObject);
+        }
+    }
+
+    private IEnumerator StartGame()
+    {
+        inCutscene = true;
+
+        tutorialText.SetActive(true);
+        yield return new WaitForSeconds(3.0f);
+
+        tutorialText.SetActive(false);
+        spandoraRound = 0;
+        BeginRound();
+
+        inCutscene = false;
+    }
+
+    private IEnumerator RoundComplete()
+    {
+        inCutscene = true;
+
+        EndRound();
+        roundCompleteText.SetActive(true);
+        yield return new WaitForSeconds(3.0f);
+
+        roundCompleteText.SetActive(false);
+        BeginRound();
+
+        inCutscene = false;
+    }
+
+    private IEnumerator GameOver()
+    {
+        inCutscene = true;
+        StopCoroutine(roundCountdownCoroutine);
+        EndRound();
+
+        gameOverText.SetActive(true);
+        replayText.SetActive(true);
+
+        while (!Input.GetKeyDown(KeyCode.Space) && !Input.GetKeyDown(KeyCode.Escape))
+        {
+            yield return null;
+        }
+        if (Input.GetKey(KeyCode.Escape))
+        {
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+            #endif
+            Application.Quit();
+        }
+        else
+        {
+            gameOverText.SetActive(false);
+            replayText.SetActive(false);
+            StartCoroutine(StartGame());
+        }
+    }
+
     private IEnumerator RoundCountdown(int startingTime)
     {
         remainingTime = startingTime;
@@ -341,10 +410,7 @@ public class SpandoraManager : MonoBehaviour
             remainingTime--;
             GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
         }
-        
-        #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-        #endif
-        Application.Quit();
+
+        StartCoroutine(GameOver());
     }
 }
