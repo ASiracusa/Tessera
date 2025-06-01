@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -19,6 +20,7 @@ public class SpandoraManager : MonoBehaviour
     private List<int> spanPoses;
     private string currWordText;
     private int currWordScore;
+    private int currWordTimeGain;
     private List<string> spelledWords;
     private WordValidity validWord;
 
@@ -26,6 +28,12 @@ public class SpandoraManager : MonoBehaviour
     private List<Die> diceData;
 
     private string[] fullDictionary;
+
+    private int spandoraRound;
+    private float roundTimescale;
+    private int pointThreshold;
+    private int remainingTime;
+    private IEnumerator roundCountdownCoroutine;
 
     private void Start()
     {
@@ -38,9 +46,10 @@ public class SpandoraManager : MonoBehaviour
         diceData = new List<Die>();
 
         GenerateDictionary();
-
         GenerateStartingDice();
-        GenerateBoard();
+
+        spandoraRound = 0;
+        BeginRound();
     }
 
     void Update()
@@ -50,6 +59,7 @@ public class SpandoraManager : MonoBehaviour
         if (Input.GetKeyDown("space") && spanPoses.Count == 0)
         {
             GenerateBoard();
+            roundTimescale += 0.5f;
         }
     }
 
@@ -112,10 +122,24 @@ public class SpandoraManager : MonoBehaviour
 
     private void AttemptWord ()
     {
-        
+
         if (validWord == WordValidity.New)
         {
             spelledWords.Add(currWordText);
+
+            if (currWordTimeGain > 0)
+            {
+                remainingTime += currWordTimeGain;
+                GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
+            }
+
+            pointThreshold -= currWordScore;
+            GameObject.Find("TopAnchor/LidCanvas/ScoreThresholdText").GetComponent<TMP_Text>().text = pointThreshold.ToString();
+            if (pointThreshold <= 0)
+            {
+                StopCoroutine(roundCountdownCoroutine);
+                BeginRound();
+            }
         }
 
         spanPoses.Clear();
@@ -130,16 +154,21 @@ public class SpandoraManager : MonoBehaviour
         // Concatenate word and evaluate score
         currWordText = "";
         int basePoints = 0;
-        int multPoints = Constants.LENGTH_MULTS[Mathf.Min(10, spanPoses.Count)];
+        int multPoints = LENGTH_MULTS[Mathf.Min(10, spanPoses.Count)];
+        currWordTimeGain = 0;
         foreach (int diePos in spanPoses)
         {
             Die die = diceData[diePos];
             DieFace dieFace = die.faces[die.currFace];
-            currWordText = currWordText + dieFace.faceText;
-            basePoints += die.rank * Constants.TILE_VALUES[dieFace.faceText[0]];
+            currWordText += dieFace.faceText;
+            basePoints += die.rank * TILE_VALUES[dieFace.faceText[0]];
             if (dieFace.letterColor == DieColor.Red)
             {
-                multPoints += Constants.TILE_VALUES[dieFace.faceText[0]];
+                multPoints += TILE_VALUES[dieFace.faceText[0]];
+            }
+            else if (dieFace.letterColor == DieColor.Blue)
+            {
+                currWordTimeGain += TILE_VALUES[dieFace.faceText[0]];
             }
         }
         currWordScore = basePoints * multPoints;
@@ -196,9 +225,9 @@ public class SpandoraManager : MonoBehaviour
 
     private void GenerateStartingDice ()
     {
-        foreach (LetterDiePresetType diePresetType in Constants.INITIAL_DICE_PRESET_TYPES)
+        foreach (LetterDiePresetType diePresetType in INITIAL_DICE_PRESET_TYPES)
         {
-            LetterDiePreset letterDiePreset = Constants.LETTER_DIE_PRESETS[diePresetType];
+            LetterDiePreset letterDiePreset = LETTER_DIE_PRESETS[diePresetType];
             string[] chosenLetters = new string[3];
             if (letterDiePreset.repetitionType == RepetitionType.AllUnique)
             {
@@ -270,19 +299,52 @@ public class SpandoraManager : MonoBehaviour
                 GameObject textCenter = letterDie.transform.Find("DieCanvas/TextCenter").gameObject;
                 textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
                 Color32 dieLetterColor = new Color32(
-                    Constants.ColorBytes[dieFace.letterColor][0],
-                    Constants.ColorBytes[dieFace.letterColor][1],
-                    Constants.ColorBytes[dieFace.letterColor][2],
+                    ColorBytes[dieFace.letterColor][0],
+                    ColorBytes[dieFace.letterColor][1],
+                    ColorBytes[dieFace.letterColor][2],
                     0x96
                 );
                 textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
                 GameObject textBottom = letterDie.transform.Find("DieCanvas/TextBottom").gameObject;
-                textBottom.GetComponent<TMP_Text>().text = (die.rank * Constants.TILE_VALUES[dieFace.faceText[0]]).ToString();
+                textBottom.GetComponent<TMP_Text>().text = (die.rank * TILE_VALUES[dieFace.faceText[0]]).ToString();
                 GameObject hitbox = letterDie.transform.Find("DieFaceCollider").gameObject;
                 hitbox.GetComponent<DieFaceData>().diePos = diePos;
 
                 diePos++;
             }
         }
+    }
+
+    private void BeginRound()
+    {
+        spandoraRound++;
+        roundTimescale = 1.0f;
+        pointThreshold = 100 * (int)Mathf.Pow(2, (spandoraRound - 1) / 2) * (spandoraRound % 2 == 0 ? 3 : 2) / 2;
+
+        GameObject.Find("TopAnchor/LidCanvas/RoundText").GetComponent<TMP_Text>().text = "ROUND " + spandoraRound.ToString();
+        GameObject.Find("TopAnchor/LidCanvas/ScoreThresholdText").GetComponent<TMP_Text>().text = pointThreshold.ToString();
+
+        spelledWords = new List<string>();
+        GenerateBoard();
+
+        roundCountdownCoroutine = RoundCountdown(60);
+        StartCoroutine(roundCountdownCoroutine);
+    }
+
+    private IEnumerator RoundCountdown(int startingTime)
+    {
+        remainingTime = startingTime;
+        GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
+        while (remainingTime > 0)
+        {
+            yield return new WaitForSeconds(1.0f / roundTimescale);
+            remainingTime--;
+            GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
+        }
+        
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
+        Application.Quit();
     }
 }
