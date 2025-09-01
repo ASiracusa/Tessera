@@ -79,6 +79,11 @@ public class SpandoraManager : MonoBehaviour
         return Mathf.Abs(row1 - row2) <= 1 && Mathf.Abs(col1 - col2) <= 1;
     }
 
+    private bool CheckIfLetter (int diePos)
+    {
+        return diceData[diePos] is LetterDie; 
+    }
+
     private void DrawWord ()
     {
         if (Input.GetMouseButtonDown(0))
@@ -89,8 +94,11 @@ public class SpandoraManager : MonoBehaviour
             if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, LayerMask.GetMask("TileFace")))
             {
                 int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
-                spanPoses.Add(diePos);
-                CheckWord();
+                if (CheckIfLetter(diePos))
+                {
+                    spanPoses.Add(diePos);
+                    CheckWord();
+                }
             }
         }
         else if (Input.GetMouseButton(0))
@@ -103,7 +111,7 @@ public class SpandoraManager : MonoBehaviour
                 if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, LayerMask.GetMask("TileFace")))
                 {
                     int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
-                    if (IsAdjacent(diePos, spanPoses[^1]))
+                    if (IsAdjacent(diePos, spanPoses[^1]) && CheckIfLetter(diePos))
                     {
                         if (!spanPoses.Contains(diePos))
                         {
@@ -113,8 +121,8 @@ public class SpandoraManager : MonoBehaviour
                         {
                             spanPoses.RemoveAt(spanPoses.Count - 1);
                         }
+                        CheckWord();
                     }
-                    CheckWord();
                 }
             }
         }
@@ -165,7 +173,7 @@ public class SpandoraManager : MonoBehaviour
         currWordTimeGain = 0;
         foreach (int diePos in spanPoses)
         {
-            Die die = diceData[diePos];
+            LetterDie die = (LetterDie)diceData[diePos];
             DieFace dieFace = die.faces[die.currFace];
             currWordText += dieFace.faceText;
             basePoints += die.rank * TILE_VALUES[dieFace.faceText[0]];
@@ -258,7 +266,7 @@ public class SpandoraManager : MonoBehaviour
                 new DieFace(letterDiePreset.letterColors[1], chosenLetters[1]),
                 new DieFace(letterDiePreset.letterColors[2], chosenLetters[2])
             };
-            Die die = new Die(DieColor.Gray, 0, dieFaces, 1);
+            LetterDie die = new LetterDie(DieColor.Gray, 1, 0, dieFaces);
             diceData.Add(die);
         }
     }
@@ -289,26 +297,33 @@ public class SpandoraManager : MonoBehaviour
         {
             for (int c = 2; c >= -2; c--)
             {
-                GameObject letterDie = Instantiate(diePrefab, Vector3.zero, Quaternion.identity, dieRoot.transform);
-                letterDie.transform.localPosition = new Vector3(20 * c, 20 * r, 0);
-                diceObjects.Add(letterDie);
+                GameObject dieObject = Instantiate(diePrefab, Vector3.zero, Quaternion.identity, dieRoot.transform);
+                dieObject.transform.localPosition = new Vector3(20 * c, 20 * r, 0);
+                diceObjects.Add(dieObject);
 
                 Die die = diceData[diePos];
-                die.currFace = UnityEngine.Random.Range(0, 3);
-                DieFace dieFace = die.faces[die.currFace];
 
-                GameObject textCenter = letterDie.transform.Find("DieCanvas/TextCenter").gameObject;
-                textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
-                Color32 dieLetterColor = new Color32(
-                    ColorBytes[dieFace.letterColor][0],
-                    ColorBytes[dieFace.letterColor][1],
-                    ColorBytes[dieFace.letterColor][2],
-                    0x96
-                );
-                textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
-                GameObject textBottom = letterDie.transform.Find("DieCanvas/TextBottom").gameObject;
-                textBottom.GetComponent<TMP_Text>().text = (die.rank * TILE_VALUES[dieFace.faceText[0]]).ToString();
-                GameObject hitbox = letterDie.transform.Find("DieFaceCollider").gameObject;
+                GameObject textCenter = dieObject.transform.Find("DieCanvas/TextCenter").gameObject;
+
+                if (die is LetterDie)
+                {
+                    LetterDie letterDie = (LetterDie)die;
+                    letterDie.currFace = UnityEngine.Random.Range(0, 3);
+                    DieFace dieFace = letterDie.faces[letterDie.currFace];
+
+                    textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
+                    Color32 dieLetterColor = new Color32(
+                        ColorBytes[dieFace.letterColor][0],
+                        ColorBytes[dieFace.letterColor][1],
+                        ColorBytes[dieFace.letterColor][2],
+                        0x96
+                    );
+                    textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
+                    GameObject textBottom = dieObject.transform.Find("DieCanvas/TextBottom").gameObject;
+                    textBottom.GetComponent<TMP_Text>().text = (die.rank * TILE_VALUES[dieFace.faceText[0]]).ToString();
+                }
+                
+                GameObject hitbox = dieObject.transform.Find("DieFaceCollider").gameObject;
                 hitbox.GetComponent<DieFaceData>().diePos = diePos;
 
                 diePos++;
