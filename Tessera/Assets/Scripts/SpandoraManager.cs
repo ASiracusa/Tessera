@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using static Constants;
+using static BoonDice;
 
 public class SpandoraManager : MonoBehaviour
 {
@@ -64,7 +65,7 @@ public class SpandoraManager : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.Space) && spanPoses.Count == 0)
             {
-                GenerateBoard();
+                GenerateBoard(true);
                 roundTimescale += 0.5f;
             }
         }
@@ -269,10 +270,19 @@ public class SpandoraManager : MonoBehaviour
             LetterDie die = new LetterDie(DieColor.Gray, 1, 0, dieFaces);
             diceData.Add(die);
         }
+
+        for (int i = 0; i < 25-diceData.Count; i++)
+        {
+            BoonDie die = new BoonDie(DieColor.Gray, 1, UnityEngine.Random.Range(0, BoonDice.BOON_DICE.Length));
+            diceData.Add(die);
+        }
     }
 
-    private void GenerateBoard ()
+    private void GenerateBoard (bool keepInPlace)
     {
+        // Shuffle diceData
+        ShuffleBoard(keepInPlace);
+
         // Remove existing dice GameObjects
         if (remainingTime > 0)
         {
@@ -280,15 +290,6 @@ public class SpandoraManager : MonoBehaviour
             {
                 Destroy(child.gameObject);
             }
-        }
-
-        // Shuffle diceData
-        for (int i = diceData.Count - 1; i > 0; i--)
-        {
-            int j = UnityEngine.Random.Range(0, i + 1);
-            Die temp = diceData[i];
-            diceData[i] = diceData[j];
-            diceData[j] = temp;
         }
 
         // Create new dice GameObjects
@@ -304,11 +305,11 @@ public class SpandoraManager : MonoBehaviour
                 Die die = diceData[diePos];
 
                 GameObject textCenter = dieObject.transform.Find("DieCanvas/TextCenter").gameObject;
+                GameObject textBottom = dieObject.transform.Find("DieCanvas/TextBottom").gameObject;
 
                 if (die is LetterDie)
                 {
                     LetterDie letterDie = (LetterDie)die;
-                    letterDie.currFace = UnityEngine.Random.Range(0, 3);
                     DieFace dieFace = letterDie.faces[letterDie.currFace];
 
                     textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
@@ -319,14 +320,53 @@ public class SpandoraManager : MonoBehaviour
                         0x96
                     );
                     textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
-                    GameObject textBottom = dieObject.transform.Find("DieCanvas/TextBottom").gameObject;
+
                     textBottom.GetComponent<TMP_Text>().text = (die.rank * TILE_VALUES[dieFace.faceText[0]]).ToString();
+                }
+                else
+                {
+                    BoonDie boonDie = (BoonDie)die;
+
+                    textCenter.GetComponent<TMP_Text>().text = BOON_DICE[0].boonName;
+                    textCenter.GetComponent<TMP_Text>().fontSize = 1.5f;
+
+                    textBottom.GetComponent<TMP_Text>().text = "";
                 }
                 
                 GameObject hitbox = dieObject.transform.Find("DieFaceCollider").gameObject;
                 hitbox.GetComponent<DieFaceData>().diePos = diePos;
 
                 diePos++;
+            }
+        }
+    }
+
+    private void ShuffleBoard(bool keepInPlace)
+    {
+        if (keepInPlace)
+        {
+            for (int i = 0; i < diceData.Count; i++)
+            {
+                if (diceData[i] is LetterDie)
+                {
+                    LetterDie letterDie = (LetterDie)diceData[i];
+                    letterDie.currFace = UnityEngine.Random.Range(0, 3);
+                }
+            }
+        }
+        else
+        {
+            for (int i = diceData.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                if (diceData[j] is LetterDie)
+                {
+                    LetterDie letterDie = (LetterDie)diceData[j];
+                    letterDie.currFace = UnityEngine.Random.Range(0, 3);
+                }
+                Die temp = diceData[i];
+                diceData[i] = diceData[j];
+                diceData[j] = temp;
             }
         }
     }
@@ -341,7 +381,7 @@ public class SpandoraManager : MonoBehaviour
         GameObject.Find("TopAnchor/LidCanvas/ScoreThresholdText").GetComponent<TMP_Text>().text = pointThreshold.ToString();
 
         spelledWords = new List<string>();
-        GenerateBoard();
+        GenerateBoard(false);
 
         roundCountdownCoroutine = RoundCountdown(60);
         StartCoroutine(roundCountdownCoroutine);

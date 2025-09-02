@@ -105,19 +105,6 @@ public static class Constants
         RandomLetters
     }
 
-    public enum BoonTrigger
-    {
-        AttemptSpell
-    }
-
-    public enum BonusField
-    {
-        Base,
-        Mult,
-        Time,
-        Gold
-    }
-
     public static readonly Dictionary<LetterDiePresetType, LetterDiePreset> LETTER_DIE_PRESETS = new Dictionary<LetterDiePresetType, LetterDiePreset> {
         {LetterDiePresetType.CommonVowels, new LetterDiePreset("EEEEAAAIIIOOU", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
         {LetterDiePresetType.LessCommonVowels, new LetterDiePreset("UUUUOOOAAIIE", RepetitionType.AllUnique, new []{DieColor.White, DieColor.White, DieColor.White})},
@@ -156,7 +143,7 @@ public static class Constants
         LetterDiePresetType.TwoThreePointLetters,
         LetterDiePresetType.ThreeFourPointLetters,
         LetterDiePresetType.ThreeFourPointLetters,
-        LetterDiePresetType.ThreeFourPointLetters,
+        // LetterDiePresetType.ThreeFourPointLetters,
         LetterDiePresetType.FourFivePointLetters,
         LetterDiePresetType.FourFivePointLetters,
         LetterDiePresetType.MidValueOneColor,
