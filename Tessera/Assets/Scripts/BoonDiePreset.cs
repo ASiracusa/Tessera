@@ -1,15 +1,17 @@
 using UnityEngine;
+using System;
 using static BoonDice;
+using System.Collections.Generic;
 
 public class BoonDiePreset
 {
     public string boonName;
     public BoonTrigger boonTrigger;
     public BonusField bonusTo;
-    public string bonusFormula;
-    public string bonusCond;
+    public Func<string, List<int>, int, int> bonusFormula;
+    public Func<string, List<int>, bool> bonusCond;
 
-    public BoonDiePreset (string boonName, BoonTrigger boonTrigger, BonusField bonusTo, string bonusFormula, string bonusCond)
+    public BoonDiePreset (string boonName, BoonTrigger boonTrigger, BonusField bonusTo, Func<string, List<int>, int, int> bonusFormula, Func<string, List<int>, bool> bonusCond)
     {
         this.boonName = boonName;
         this.boonTrigger = boonTrigger;

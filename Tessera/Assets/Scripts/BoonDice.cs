@@ -19,183 +19,140 @@ public static class BoonDice
         Gold
     }
 
-    public static readonly string[] ARITHMETIC_OPS = new string[] {
-        "+",
-        "-",
-        "*",
-        "/",
-        "%"
-    };
-
-    public static readonly string[] COMPARISON_OPS = new string[] {
-        "==",
-        "!=",
-        "<",
-        ">",
-        "<=",
-        ">="
-    };
-
     public static readonly BoonDiePreset[] BOON_DICE = new BoonDiePreset[] {
-        new("LEO", BoonTrigger.CheckWord, BonusField.Base, "3 * rank", "length == 3"),
-        new("AQUARIUS", BoonTrigger.CheckWord, BonusField.Mult, "rank", "length == 4"),
-        new("ARIES", BoonTrigger.CheckWord, BonusField.Mult, "2 * rank", "length == 5"),
-        new("PISCES", BoonTrigger.CheckWord, BonusField.Mult, "4 * rank", "length == 6"),
-        new("SAGITTARIUS", BoonTrigger.CheckWord, BonusField.Mult, "8 * rank", "length > 6"),
-        new("CANCER", BoonTrigger.CheckWord, BonusField.Mult, "rank", "length % 2 == 1"),
-        new("VIRGO", BoonTrigger.CheckWord, BonusField.Base, "rank * length", "uniqueletters == length"),
-        new("GEMINI", BoonTrigger.CheckWord, BonusField.Mult, "2 * rank * doubleletters", "doubleletters > 0"),
-        new("LIBRA", BoonTrigger.CheckWord, BonusField.Base, "3 * rank", "length % 2 == 0"),
-        new("TAURUS", BoonTrigger.CheckWord, BonusField.Mult, "2 * rank * lenmult", "straights == length - 2"),
-        new("SCORPIO", BoonTrigger.CheckWord, BonusField.Mult, "rank * lenmult", "straights == 0"),
-        new("CAPRICORN", BoonTrigger.CheckWord, BonusField.Mult, "3 * rank * lenmult", "crosses > 0"),
+        new(
+            "LEO",
+            BoonTrigger.CheckWord,
+            BonusField.Base,
+            (word, diePoses, rank) => { return 3 * rank; },
+            (word, diePoses) => { return word.Length == 3; }
+        ),
+        new(
+            "AQUARIUS",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return rank; },
+            (word, diePoses) => { return word.Length == 4; }
+        ),
+        new(
+            "ARIES",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 2 * rank; },
+            (word, diePoses) => { return word.Length == 5; }
+        ),
+        new(
+            "PISCES",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 4 * rank; },
+            (word, diePoses) => { return word.Length == 6; }
+        ),
+        new(
+            "SAGITTARIUS",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 8 * rank; },
+            (word, diePoses) => { return word.Length > 6; }
+        ),
+        new(
+            "CANCER",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return rank; },
+            (word, diePoses) => { return word.Length % 2 == 1; }
+        ),
+        new(
+            "LIBRA",
+            BoonTrigger.CheckWord,
+            BonusField.Base,
+            (word, diePoses, rank) => { return 3 * rank; },
+            (word, diePoses) => { return word.Length % 2 == 0; }
+        ),
+        new(
+            "VIRGO",
+            BoonTrigger.CheckWord,
+            BonusField.Base,
+            (word, diePoses, rank) => { return rank * word.Length; },
+            (word, diePoses) => { return word.Distinct().Count() == word.Length; }
+        ),
+        new(
+            "GEMINI",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 2 * rank * CountDoubleLetters(word, diePoses); },
+            (word, diePoses) => { return CountDoubleLetters(word, diePoses) > 0; }
+        ),
+        new(
+            "TAURUS",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 2 * rank * LENGTH_MULTS[word.Length]; },
+            (word, diePoses) => { return CountStraights(word, diePoses) > word.Length - 2; }
+        ),
+        new(
+            "SCORPIO",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return rank * LENGTH_MULTS[word.Length]; },
+            (word, diePoses) => { return CountStraights(word, diePoses) == 0; }
+        ),
+        new(
+            "CAPRICORN",
+            BoonTrigger.CheckWord,
+            BonusField.Mult,
+            (word, diePoses, rank) => { return 3 * rank * LENGTH_MULTS[word.Length]; },
+            (word, diePoses) => { return CountCrosses(word, diePoses) > 0; }
+        ),
     };
 
-    public static bool CheckBoonCond (string boonCond, string word, List<int> diePoses)
+    private static int CountDoubleLetters(string word, List<int> diePoses)
     {
-        // Find which condition is being used
-        string comparator = null;
-        foreach (string compOper in COMPARISON_OPS)
+        int value = 0;
+        for (int j = 0; j < word.Length - 1; j++)
         {
-            if (boonCond.Contains(compOper))
+            if (word[j] == word[j + 1])
             {
-                comparator = compOper;
-                break;
+                value += 1;
             }
         }
-        if (comparator == null)
-        {
-            throw new ArgumentException("No valid comparator.");
-        }
-
-        // Calculate values of both sides of the comparison
-        string[] sides = boonCond.Split(comparator);
-        int total1 = CalculateBoonBonus(sides[0], word, diePoses, 0);
-        int total2 = CalculateBoonBonus(sides[1], word, diePoses, 0);
-
-        // Return evaluation based on totals and comparator
-        return comparator switch
-        {
-            "==" => total1 == total2,
-            "!=" => total1 != total2,
-            "<" => total1 < total2,
-            ">" => total1 > total2,
-            "<=" => total1 <= total2,
-            ">=" => total1 >= total2,
-            _ => false,
-        };
+        return value;
     }
 
-    public static int CalculateBoonBonus (string boonFormula, string word, List<int> diePoses, int rank)
+    private static int CountStraights(string word, List<int> diePoses)
     {
-        string[] tokens = boonFormula.Trim().Split(" ");
-        int total = 0;
-        string oper = "+";
-        int value;
-
-        for (int i = 0; i < tokens.Length; i++)
+        int value = 0;
+        for (int j = 0; j < word.Length - 2; j++)
         {
-            string token = tokens[i];
-            if (i % 2 == 0)
+            if (diePoses[j] / 5 - diePoses[j + 1] / 5 == diePoses[j + 1] / 5 - diePoses[j + 2] / 5 &&
+                diePoses[j] % 5 - diePoses[j + 1] % 5 == diePoses[j + 1] % 5 - diePoses[j + 2] % 5)
             {
-                switch (token)
-                {
-                    case "rank":
-                        value = rank;
-                        break;
-                    case "length":
-                        value = word.Length;
-                        break;
-                    case "lenmult":
-                        value = LENGTH_MULTS[word.Length];
-                        break;
-                    case "uniqueletters":
-                        value = word.Distinct().Count();
-                        break;
-                    case "doubleletters":
-                        value = 0;
-                        for (int j = 0; j < word.Length - 1; j++)
-                        {
-                            if (word[j] == word[j + 1])
-                            {
-                                value += 1;
-                            }
-                        }
-                        break;
-                    case "straights":
-                        value = 0;
-                        for (int j = 0; j < word.Length - 2; j++)
-                        {
-                            if (diePoses[j] / 5 - diePoses[j + 1] / 5 == diePoses[j + 1] / 5 - diePoses[j + 2] / 5 &&
-                                diePoses[j] % 5 - diePoses[j + 1] % 5 == diePoses[j + 1] % 5 - diePoses[j + 2] % 5)
-                            {
-                                value += 1;
-                            }
-                        }
-                        break;
-                    case "crosses":
-                        value = 0;
-                        List<int> intersections = new();
-                        for (int j = 0; j < word.Length - 1; j++)
-                        {
-                            if (Mathf.Abs(diePoses[j] / 5 - diePoses[j + 1] / 5) == 1 && Mathf.Abs(diePoses[j] % 5 - diePoses[j + 1] % 5) == 1)
-                            {
-                                int intersection = diePoses[j] + diePoses[j + 1];
-                                if (intersections.Contains(intersection))
-                                {
-                                    value += 1;
-                                }
-                                else
-                                {
-                                    intersections.Add(intersection);
-                                }
-                            }
-                        }
-                        break;
-                    default:
-                        bool isNumeric = int.TryParse(token, out value);
-                        if (!isNumeric)
-                        {
-                            throw new ArgumentException("Invalid parameter in formula.");
-                        }
-                        break;
-                }
-
-                switch (oper)
-                {
-                    case "+":
-                        total += value;
-                        break;
-                    case "-":
-                        total -= value;
-                        break;
-                    case "*":
-                        total *= value;
-                        break;
-                    case "/":
-                        total /= value;
-                        break;
-                    case "%":
-                        total %= value;
-                        break;
-                    default:
-                        break;
-                }
+                value += 1;
             }
-            else
+        }
+        return value;
+    }
+
+    private static int CountCrosses(string word, List<int> diePoses)
+    {
+        int value = 0;
+        List<int> intersections = new();
+        for (int j = 0; j < word.Length - 1; j++)
+        {
+            if (Mathf.Abs(diePoses[j] / 5 - diePoses[j + 1] / 5) == 1 && Mathf.Abs(diePoses[j] % 5 - diePoses[j + 1] % 5) == 1)
             {
-                if (ARITHMETIC_OPS.Contains(token))
+                int intersection = diePoses[j] + diePoses[j + 1];
+                if (intersections.Contains(intersection))
                 {
-                    oper = token;
+                    value += 1;
                 }
                 else
                 {
-                    throw new ArgumentException("Invalid operator in formula.");
+                    intersections.Add(intersection);
                 }
             }
         }
-
-        return total;
+        return value;
     }
 
 }

@@ -197,11 +197,11 @@ public class SpandoraManager : MonoBehaviour
         {
             BoonDie boonDie = (BoonDie)diceData[attemptWordBoonIndex];
             BoonDiePreset boonDiePreset = BOON_DICE[boonDie.boonId];
-            if (!CheckBoonCond(boonDiePreset.bonusCond, currWordText, spanPoses))
+            if (!boonDiePreset.bonusCond(currWordText, spanPoses))
             {
                 continue;
             }
-            int bonus = CalculateBoonBonus(boonDiePreset.bonusFormula, currWordText, spanPoses, boonDie.rank);
+            int bonus = boonDiePreset.bonusFormula(currWordText, spanPoses, boonDie.rank);
             if (boonDiePreset.bonusTo == BonusField.Base)
             {
                 basePoints += bonus;
@@ -297,8 +297,7 @@ public class SpandoraManager : MonoBehaviour
 
         for (int i = 0; i < 25-diceData.Count; i++)
         {
-            BoonDie die = new(DieColor.Black, 1, 11);
-            // BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
+            BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
             diceData.Add(die);
         }
     }
