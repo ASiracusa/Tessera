@@ -197,11 +197,11 @@ public class SpandoraManager : MonoBehaviour
         {
             BoonDie boonDie = (BoonDie)diceData[attemptWordBoonIndex];
             BoonDiePreset boonDiePreset = BOON_DICE[boonDie.boonId];
-            if (!CheckBoonCond(boonDiePreset.bonusCond, currWordText))
+            if (!CheckBoonCond(boonDiePreset.bonusCond, currWordText, spanPoses))
             {
                 continue;
             }
-            int bonus = CalculateBoonBonus(boonDiePreset.bonusFormula, currWordText, boonDie.rank);
+            int bonus = CalculateBoonBonus(boonDiePreset.bonusFormula, currWordText, spanPoses, boonDie.rank);
             if (boonDiePreset.bonusTo == BonusField.Base)
             {
                 basePoints += bonus;
@@ -287,17 +287,18 @@ public class SpandoraManager : MonoBehaviour
             }
             
             DieFace[] dieFaces = new DieFace[] {
-                new DieFace(letterDiePreset.letterColors[0], chosenLetters[0]),
-                new DieFace(letterDiePreset.letterColors[1], chosenLetters[1]),
-                new DieFace(letterDiePreset.letterColors[2], chosenLetters[2])
+                new (letterDiePreset.letterColors[0], chosenLetters[0]),
+                new (letterDiePreset.letterColors[1], chosenLetters[1]),
+                new (letterDiePreset.letterColors[2], chosenLetters[2])
             };
-            LetterDie die = new LetterDie(DieColor.Gray, 1, 0, dieFaces);
+            LetterDie die = new (DieColor.Gray, 1, 0, dieFaces);
             diceData.Add(die);
         }
 
         for (int i = 0; i < 25-diceData.Count; i++)
         {
-            BoonDie die = new BoonDie(DieColor.Gray, 1, UnityEngine.Random.Range(0, BoonDice.BOON_DICE.Length));
+            BoonDie die = new(DieColor.Black, 1, 11);
+            // BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
             diceData.Add(die);
         }
     }
@@ -331,17 +332,16 @@ public class SpandoraManager : MonoBehaviour
                 GameObject textCenter = dieObject.transform.Find("DieCanvas/TextCenter").gameObject;
                 GameObject textBottom = dieObject.transform.Find("DieCanvas/TextBottom").gameObject;
 
-                if (die is LetterDie)
+                if (die is LetterDie letterDie)
                 {
-                    LetterDie letterDie = (LetterDie)die;
                     DieFace dieFace = letterDie.faces[letterDie.currFace];
 
                     textCenter.GetComponent<TMP_Text>().text = dieFace.faceText;
-                    Color32 dieLetterColor = new Color32(
+                    Color32 dieLetterColor = new(
                         ColorBytes[dieFace.letterColor][0],
                         ColorBytes[dieFace.letterColor][1],
                         ColorBytes[dieFace.letterColor][2],
-                        0x96
+                        0xc0
                     );
                     textCenter.GetComponent<TMP_Text>().faceColor = dieLetterColor;
 
@@ -351,12 +351,24 @@ public class SpandoraManager : MonoBehaviour
                 {
                     BoonDie boonDie = (BoonDie)die;
 
-                    textCenter.GetComponent<TMP_Text>().text = BOON_DICE[0].boonName;
+                    textCenter.GetComponent<TMP_Text>().text = BOON_DICE[boonDie.boonId].boonName;
                     textCenter.GetComponent<TMP_Text>().fontSize = 2f;
 
                     textBottom.GetComponent<TMP_Text>().text = "";
                 }
-                
+
+                Color32 dieBaseColor = new(
+                    ColorBytes[die.dieColor][0],
+                    ColorBytes[die.dieColor][1],
+                    ColorBytes[die.dieColor][2],
+                    0xFF
+                );
+                Renderer renderer = dieObject.GetComponent<Renderer>();
+                MaterialPropertyBlock block = new();
+                renderer.GetPropertyBlock(block); // Get existing properties if any
+                block.SetColor("_BaseColor", dieBaseColor);
+                renderer.SetPropertyBlock(block);
+
                 GameObject hitbox = dieObject.transform.Find("DieFaceCollider").gameObject;
                 hitbox.GetComponent<DieFaceData>().diePos = diePos;
 

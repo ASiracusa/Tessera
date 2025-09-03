@@ -5,7 +5,7 @@ public class BoonDie : Die
 {
     public int boonId;
 
-    public BoonDie (Constants.DieColor dieColor, int rank, int boonId) : base(dieColor, rank)
+    public BoonDie (DieColor dieColor, int rank, int boonId) : base(dieColor, rank)
     {
         this.boonId = boonId;
     }
