@@ -7,7 +7,7 @@ public static class BoonDice
 {
     public enum BoonTrigger
     {
-        AttemptSpell
+        CheckWord
     }
 
     public enum BonusField
@@ -26,7 +26,7 @@ public static class BoonDice
     };
 
     public static readonly BoonDiePreset[] BOON_DICE = new BoonDiePreset[] {
-        new BoonDiePreset("SAGITTARIUS", BoonTrigger.AttemptSpell, BonusField.Base, "3 * rank", "length = 3")
+        new BoonDiePreset("SAGITTARIUS", BoonTrigger.CheckWord, BonusField.Base, "3 * rank", "length = 3")
     };
 
     public static int CalculateBoonBonus (string boonFormula, string word, int rank)
@@ -39,7 +39,7 @@ public static class BoonDice
         for (int i = 0; i < tokens.Length; i++)
         {
             string token = tokens[i];
-            if (i % 2 == 1)
+            if (i % 2 == 0)
             {
                 switch (token)
                 {

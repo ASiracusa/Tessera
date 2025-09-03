@@ -31,6 +31,7 @@ public class SpandoraManager : MonoBehaviour
 
     private List<GameObject> diceObjects;
     private List<Die> diceData;
+    private List<int>[] boonTriggerStacks;
 
     private string[] fullDictionary;
 
@@ -41,7 +42,7 @@ public class SpandoraManager : MonoBehaviour
     private int remainingTime;
     private IEnumerator roundCountdownCoroutine;
 
-    private void Start()
+    private void Start ()
     {
         bottomRoot = GameObject.Find("BottomAnchor");
         dieRoot = GameObject.Find("BottomAnchor/DieRoot");
@@ -50,6 +51,11 @@ public class SpandoraManager : MonoBehaviour
         spelledWords = new List<string>();
         diceObjects = new List<GameObject>();
         diceData = new List<Die>();
+        boonTriggerStacks = new List<int>[Enum.GetNames(typeof(BoonTrigger)).Length];
+        for (int i = 0; i < boonTriggerStacks.Length; i++)
+        {
+            boonTriggerStacks[i] = new List<int>();
+        }
 
         GenerateDictionary();
         GenerateStartingDice();
@@ -57,7 +63,7 @@ public class SpandoraManager : MonoBehaviour
         StartCoroutine(StartGame());
     }
 
-    void Update()
+    void Update ()
     {
         if (!inCutscene)
         {
@@ -185,6 +191,20 @@ public class SpandoraManager : MonoBehaviour
             else if (dieFace.letterColor == DieColor.Blue)
             {
                 currWordTimeGain += TILE_VALUES[dieFace.faceText[0]];
+            }
+        }
+        foreach (int attemptWordBoonIndex in boonTriggerStacks[(int)BoonTrigger.CheckWord])
+        {
+            BoonDie boonDie = (BoonDie)diceData[attemptWordBoonIndex];
+            BoonDiePreset boonDiePreset = BOON_DICE[boonDie.boonId];
+            int bonus = CalculateBoonBonus(boonDiePreset.bonusFormula, currWordText, boonDie.rank);
+            if (boonDiePreset.bonusTo == BonusField.Base)
+            {
+                basePoints += bonus;
+            }
+            else if (boonDiePreset.bonusTo == BonusField.Mult)
+            {
+                multPoints += bonus;
             }
         }
         currWordScore = basePoints * multPoints;
@@ -341,7 +361,7 @@ public class SpandoraManager : MonoBehaviour
         }
     }
 
-    private void ShuffleBoard(bool keepInPlace)
+    private void ShuffleBoard (bool keepInPlace)
     {
         if (keepInPlace)
         {
@@ -371,7 +391,23 @@ public class SpandoraManager : MonoBehaviour
         }
     }
 
-    private void BeginRound()
+    private void GenerateBoonStacks ()
+    {
+        for (int i = 0; i < boonTriggerStacks.Length; i++)
+        {
+            boonTriggerStacks[i].Clear();
+        }
+        for (int i = 0; i < diceData.Count; i++)
+        {
+            if (diceData[i] is BoonDie)
+            {
+                BoonDie boonDie = (BoonDie)diceData[i];
+                boonTriggerStacks[(int)(BOON_DICE[boonDie.boonId].boonTrigger)].Add(i);
+            }
+        }
+    }
+
+    private void BeginRound ()
     {
         spandoraRound++;
         roundTimescale = 1.0f;
@@ -382,12 +418,13 @@ public class SpandoraManager : MonoBehaviour
 
         spelledWords = new List<string>();
         GenerateBoard(false);
+        GenerateBoonStacks();
 
         roundCountdownCoroutine = RoundCountdown(60);
         StartCoroutine(roundCountdownCoroutine);
     }
 
-    private void EndRound()
+    private void EndRound ()
     {
         GameObject.Find("TopAnchor/LidCanvas/RoundText").GetComponent<TMP_Text>().text = "";
         GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = "";
@@ -399,7 +436,7 @@ public class SpandoraManager : MonoBehaviour
         }
     }
 
-    private IEnumerator StartGame()
+    private IEnumerator StartGame ()
     {
         inCutscene = true;
 
@@ -413,7 +450,7 @@ public class SpandoraManager : MonoBehaviour
         inCutscene = false;
     }
 
-    private IEnumerator RoundComplete()
+    private IEnumerator RoundComplete ()
     {
         inCutscene = true;
 
@@ -427,7 +464,7 @@ public class SpandoraManager : MonoBehaviour
         inCutscene = false;
     }
 
-    private IEnumerator GameOver()
+    private IEnumerator GameOver ()
     {
         inCutscene = true;
         StopCoroutine(roundCountdownCoroutine);
@@ -455,7 +492,7 @@ public class SpandoraManager : MonoBehaviour
         }
     }
 
-    private IEnumerator RoundCountdown(int startingTime)
+    private IEnumerator RoundCountdown (int startingTime)
     {
         remainingTime = startingTime;
         GameObject.Find("TopAnchor/LidCanvas/TimerText").GetComponent<TMP_Text>().text = remainingTime.ToString();
