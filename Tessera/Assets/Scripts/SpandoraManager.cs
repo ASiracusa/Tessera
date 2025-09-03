@@ -197,6 +197,10 @@ public class SpandoraManager : MonoBehaviour
         {
             BoonDie boonDie = (BoonDie)diceData[attemptWordBoonIndex];
             BoonDiePreset boonDiePreset = BOON_DICE[boonDie.boonId];
+            if (!CheckBoonCond(boonDiePreset.bonusCond, currWordText))
+            {
+                continue;
+            }
             int bonus = CalculateBoonBonus(boonDiePreset.bonusFormula, currWordText, boonDie.rank);
             if (boonDiePreset.bonusTo == BonusField.Base)
             {
@@ -348,7 +352,7 @@ public class SpandoraManager : MonoBehaviour
                     BoonDie boonDie = (BoonDie)die;
 
                     textCenter.GetComponent<TMP_Text>().text = BOON_DICE[0].boonName;
-                    textCenter.GetComponent<TMP_Text>().fontSize = 1.5f;
+                    textCenter.GetComponent<TMP_Text>().fontSize = 2f;
 
                     textBottom.GetComponent<TMP_Text>().text = "";
                 }

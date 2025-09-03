@@ -9,7 +9,7 @@ public class BoonDiePreset
     public string bonusFormula;
     public string bonusCond;
 
-    public BoonDiePreset (string boonName, BoonDice.BoonTrigger boonTrigger, BoonDice.BonusField bonusTo, string bonusFormula, string bonusCond)
+    public BoonDiePreset (string boonName, BoonTrigger boonTrigger, BonusField bonusTo, string bonusFormula, string bonusCond)
     {
         this.boonName = boonName;
         this.boonTrigger = boonTrigger;

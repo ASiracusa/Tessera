@@ -25,13 +25,57 @@ public static class BoonDice
         "/"
     };
 
-    public static readonly BoonDiePreset[] BOON_DICE = new BoonDiePreset[] {
-        new BoonDiePreset("SAGITTARIUS", BoonTrigger.CheckWord, BonusField.Base, "3 * rank", "length = 3")
+    public static readonly string[] COMPARISON_OPS = new string[] {
+        "==",
+        "!=",
+        "<",
+        ">",
+        "<=",
+        ">="
     };
+
+    public static readonly BoonDiePreset[] BOON_DICE = new BoonDiePreset[] {
+        new BoonDiePreset("LEO", BoonTrigger.CheckWord, BonusField.Base, "3 * rank", "length == 3")
+    };
+
+    public static bool CheckBoonCond (string boonCond, string word)
+    {
+        // Find which condition is being used
+        string comparator = null;
+        foreach (string compOper in COMPARISON_OPS)
+        {
+            if (boonCond.Contains(compOper))
+            {
+                comparator = compOper;
+                break;
+            }
+        }
+        if (comparator == null)
+        {
+            throw new ArgumentException("No valid comparator.");
+        }
+
+        // Calculate values of both sides of the comparison
+        string[] sides = boonCond.Split(comparator);
+        int total1 = CalculateBoonBonus(sides[0], word, 0);
+        int total2 = CalculateBoonBonus(sides[1], word, 0);
+
+        // Return evaluation based on totals and comparator
+        return comparator switch
+        {
+            "==" => total1 == total2,
+            "!=" => total1 != total2,
+            "<" => total1 < total2,
+            ">" => total1 > total2,
+            "<=" => total1 <= total2,
+            ">=" => total1 >= total2,
+            _ => false,
+        };
+    }
 
     public static int CalculateBoonBonus (string boonFormula, string word, int rank)
     {
-        string[] tokens = boonFormula.Split(" ");
+        string[] tokens = boonFormula.Trim().Split(" ");
         int total = 0;
         string oper = "+";
         int value;
@@ -45,6 +89,9 @@ public static class BoonDice
                 {
                     case "rank":
                         value = rank;
+                        break;
+                    case "length":
+                        value = word.Length;
                         break;
                     default:
                         bool isNumeric = int.TryParse(token, out value);
@@ -88,4 +135,5 @@ public static class BoonDice
 
         return total;
     }
+
 }
