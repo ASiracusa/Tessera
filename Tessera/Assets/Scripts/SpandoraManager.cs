@@ -31,7 +31,7 @@ public class SpandoraManager : MonoBehaviour
 
     private List<GameObject> diceObjects;
     private List<Die> diceData;
-    private List<int>[] boonTriggerStacks;
+    private List<int> boonPoses;
 
     private string[] fullDictionary;
 
@@ -51,11 +51,7 @@ public class SpandoraManager : MonoBehaviour
         spelledWords = new List<string>();
         diceObjects = new List<GameObject>();
         diceData = new List<Die>();
-        boonTriggerStacks = new List<int>[Enum.GetNames(typeof(BoonTrigger)).Length];
-        for (int i = 0; i < boonTriggerStacks.Length; i++)
-        {
-            boonTriggerStacks[i] = new List<int>();
-        }
+        boonPoses = new List<int>();
 
         GenerateDictionary();
         GenerateStartingDice();
@@ -83,12 +79,24 @@ public class SpandoraManager : MonoBehaviour
         int col1 = pos1 % 5;
         int row2 = pos2 / 5;
         int col2 = pos2 % 5;
-        return Mathf.Abs(row1 - row2) <= 1 && Mathf.Abs(col1 - col2) <= 1;
+        return Mathf.Abs(row1 - row2) == 1 || Mathf.Abs(col1 - col2) == 1;
     }
 
-    private bool CheckIfLetter (int diePos)
+    private bool CheckIfSpellable(int diePos)
     {
-        return diceData[diePos] is LetterDie; 
+        if (spanPoses.Count > 0 && diceData[spanPoses[^1]] is BoonDie boonDie1 && BOON_DICE[boonDie1.boonId] is SpellableBoonDiePreset spellableBoonDiePreset1)
+        {
+            if (!spellableBoonDiePreset1.exitDie(diceData, spanPoses, diePos)) return false;
+        }
+        if (spanPoses.Count == 0 && diceData[diePos] is BoonDie boonDie2 && BOON_DICE[boonDie2.boonId] is SpellableBoonDiePreset spellableBoonDiePreset2)
+        {
+            if (!spellableBoonDiePreset2.canStartWord) return false;
+        }
+        if (spanPoses.Count > 0 && diceData[diePos] is BoonDie boonDie3 && BOON_DICE[boonDie3.boonId] is SpellableBoonDiePreset spellableBoonDiePreset3)
+        {
+            if (!spellableBoonDiePreset3.enterDie(diceData, spanPoses, diePos)) return false;
+        }
+        return true;
     }
 
     private void DrawWord ()
@@ -101,7 +109,7 @@ public class SpandoraManager : MonoBehaviour
             if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, LayerMask.GetMask("TileFace")))
             {
                 int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
-                if (CheckIfLetter(diePos))
+                if (CheckIfSpellable(diePos))
                 {
                     spanPoses.Add(diePos);
                     CheckWord();
@@ -118,7 +126,7 @@ public class SpandoraManager : MonoBehaviour
                 if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, LayerMask.GetMask("TileFace")))
                 {
                     int diePos = hitInfo.collider.gameObject.GetComponent<DieFaceData>().diePos;
-                    if (IsAdjacent(diePos, spanPoses[^1]) && CheckIfLetter(diePos))
+                    if (IsAdjacent(diePos, spanPoses[^1]) && CheckIfSpellable(diePos))
                     {
                         if (!spanPoses.Contains(diePos))
                         {
@@ -178,37 +186,51 @@ public class SpandoraManager : MonoBehaviour
         int basePoints = 0;
         int multPoints = LENGTH_MULTS[Mathf.Min(10, spanPoses.Count)];
         currWordTimeGain = 0;
-        foreach (int diePos in spanPoses)
+        for (int i = 0; i < spanPoses.Count; i++)
         {
-            LetterDie die = (LetterDie)diceData[diePos];
-            DieFace dieFace = die.faces[die.currFace];
-            currWordText += dieFace.faceText;
-            basePoints += die.rank * TILE_VALUES[dieFace.faceText[0]];
-            if (dieFace.letterColor == DieColor.Red)
+            int diePos = spanPoses[i];
+            if (diceData[diePos] is LetterDie die)
             {
-                multPoints += TILE_VALUES[dieFace.faceText[0]];
+                DieFace dieFace = die.faces[die.currFace];
+                currWordText += dieFace.faceText;
+                basePoints += die.rank * TILE_VALUES[dieFace.faceText[0]];
+                if (dieFace.letterColor == DieColor.Red)
+                {
+                    multPoints += TILE_VALUES[dieFace.faceText[0]];
+                }
+                else if (dieFace.letterColor == DieColor.Blue)
+                {
+                    currWordTimeGain += TILE_VALUES[dieFace.faceText[0]];
+                }
             }
-            else if (dieFace.letterColor == DieColor.Blue)
+            else if (diceData[diePos] is BoonDie boonDie && BOON_DICE[boonDie.boonId] is SpellableBoonDiePreset spellableBoonDiePreset)
             {
-                currWordTimeGain += TILE_VALUES[dieFace.faceText[0]];
+                currWordText += spellableBoonDiePreset.dieText(diceData, spanPoses, i);
+                basePoints += spellableBoonDiePreset.dieValue(diceData, spanPoses, boonDie.rank);
             }
         }
-        foreach (int attemptWordBoonIndex in boonTriggerStacks[(int)BoonTrigger.CheckWord])
+        foreach (int boonIndex in boonPoses)
         {
-            BoonDie boonDie = (BoonDie)diceData[attemptWordBoonIndex];
-            BoonDiePreset boonDiePreset = BOON_DICE[boonDie.boonId];
-            if (!boonDiePreset.bonusCond(currWordText, spanPoses))
+            BoonDie boonDie = (BoonDie)diceData[boonIndex];
+            if (BOON_DICE[boonDie.boonId] is AttemptSpellBoonDiePreset boonDiePreset)
             {
-                continue;
+                if (!boonDiePreset.bonusCond(currWordText, spanPoses))
+                {
+                    continue;
+                }
+                int bonus = boonDiePreset.bonusFormula(currWordText, spanPoses, boonDie.rank);
+                if (boonDiePreset.bonusTo == BonusField.Base)
+                {
+                    basePoints += bonus;
+                }
+                else if (boonDiePreset.bonusTo == BonusField.Mult)
+                {
+                    multPoints += bonus;
+                }
             }
-            int bonus = boonDiePreset.bonusFormula(currWordText, spanPoses, boonDie.rank);
-            if (boonDiePreset.bonusTo == BonusField.Base)
+            else if (BOON_DICE[boonDie.boonId] is SpellableBoonDiePreset)
             {
-                basePoints += bonus;
-            }
-            else if (boonDiePreset.bonusTo == BonusField.Mult)
-            {
-                multPoints += bonus;
+                
             }
         }
         currWordScore = basePoints * multPoints;
@@ -217,7 +239,7 @@ public class SpandoraManager : MonoBehaviour
         GameObject.Find("BottomAnchor/CurrWordCanvas/CurrScoreRoot/ScoreMultText").GetComponent<TMP_Text>().text = multPoints.ToString();
 
         // Check word validity
-        if (currWordText.Length < 3)
+        if (currWordText.Length < 3 || (diceData[spanPoses[^1]] is BoonDie boonDie2 && BOON_DICE[boonDie2.boonId] is SpellableBoonDiePreset spellableBoonDiePreset2 && !spellableBoonDiePreset2.canEndWord))
         {
             validWord = WordValidity.Invalid;
         }
@@ -297,7 +319,8 @@ public class SpandoraManager : MonoBehaviour
 
         for (int i = 0; i < 25-diceData.Count; i++)
         {
-            BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
+            BoonDie die = new(DieColor.Black, 1, 18);
+            // BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
             diceData.Add(die);
         }
     }
@@ -406,18 +429,14 @@ public class SpandoraManager : MonoBehaviour
         }
     }
 
-    private void GenerateBoonStacks ()
+    private void GenerateBoonPoses ()
     {
-        for (int i = 0; i < boonTriggerStacks.Length; i++)
-        {
-            boonTriggerStacks[i].Clear();
-        }
+        boonPoses.Clear();
         for (int i = 0; i < diceData.Count; i++)
         {
             if (diceData[i] is BoonDie)
             {
-                BoonDie boonDie = (BoonDie)diceData[i];
-                boonTriggerStacks[(int)(BOON_DICE[boonDie.boonId].boonTrigger)].Add(i);
+                boonPoses.Add(i);
             }
         }
     }
@@ -433,7 +452,7 @@ public class SpandoraManager : MonoBehaviour
 
         spelledWords = new List<string>();
         GenerateBoard(false);
-        GenerateBoonStacks();
+        GenerateBoonPoses();
 
         roundCountdownCoroutine = RoundCountdown(60);
         StartCoroutine(roundCountdownCoroutine);

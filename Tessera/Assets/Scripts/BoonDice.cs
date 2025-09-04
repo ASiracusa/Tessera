@@ -6,10 +6,6 @@ using static Constants;
 
 public static class BoonDice
 {
-    public enum BoonTrigger
-    {
-        CheckWord
-    }
 
     public enum BonusField
     {
@@ -20,89 +16,140 @@ public static class BoonDice
     }
 
     public static readonly BoonDiePreset[] BOON_DICE = new BoonDiePreset[] {
-        new(
+        new AttemptSpellBoonDiePreset(
             "LEO",
-            BoonTrigger.CheckWord,
             BonusField.Base,
             (word, diePoses, rank) => { return 3 * rank; },
             (word, diePoses) => { return word.Length == 3; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "AQUARIUS",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return rank; },
             (word, diePoses) => { return word.Length == 4; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "ARIES",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 2 * rank; },
             (word, diePoses) => { return word.Length == 5; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "PISCES",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 4 * rank; },
             (word, diePoses) => { return word.Length == 6; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "SAGITTARIUS",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 8 * rank; },
             (word, diePoses) => { return word.Length > 6; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "CANCER",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return rank; },
             (word, diePoses) => { return word.Length % 2 == 1; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "LIBRA",
-            BoonTrigger.CheckWord,
             BonusField.Base,
             (word, diePoses, rank) => { return 3 * rank; },
             (word, diePoses) => { return word.Length % 2 == 0; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "VIRGO",
-            BoonTrigger.CheckWord,
             BonusField.Base,
             (word, diePoses, rank) => { return rank * word.Length; },
             (word, diePoses) => { return word.Distinct().Count() == word.Length; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "GEMINI",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 2 * rank * CountDoubleLetters(word, diePoses); },
             (word, diePoses) => { return CountDoubleLetters(word, diePoses) > 0; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "TAURUS",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 2 * rank * LENGTH_MULTS[word.Length]; },
             (word, diePoses) => { return CountStraights(word, diePoses) > word.Length - 2; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "SCORPIO",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return rank * LENGTH_MULTS[word.Length]; },
             (word, diePoses) => { return CountStraights(word, diePoses) == 0; }
         ),
-        new(
+        new AttemptSpellBoonDiePreset(
             "CAPRICORN",
-            BoonTrigger.CheckWord,
             BonusField.Mult,
             (word, diePoses, rank) => { return 3 * rank * LENGTH_MULTS[word.Length]; },
             (word, diePoses) => { return CountCrosses(word, diePoses) > 0; }
+        ),
+        new SpellableBoonDiePreset(
+            "UNDIQUE",
+            false,
+            false,
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, i) => { return ""; },
+            (diceData, diePoses, rank) => { return 0; }
+        ),
+        new SpellableBoonDiePreset(
+            "RECTUS",
+            false,
+            false,
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, currPos) => { return currPos / 5 - diePoses[^1] / 5 == diePoses[^1] / 5 - diePoses[^2] / 5 && currPos % 5 - diePoses[^1] % 5 == diePoses[^1] % 5 - diePoses[^2] % 5; },
+            (diceData, diePoses, i) => { return ""; },
+            (diceData, diePoses, rank) => { return 3 * rank; }
+        ),
+        new SpellableBoonDiePreset(
+            "CARDINALIS",
+            false,
+            false,
+            (diceData, diePoses, currPos) => { return Mathf.Abs(currPos / 5 - diePoses[^1] / 5) + Mathf.Abs(currPos % 5 - diePoses[^1] % 5) == 1; },
+            (diceData, diePoses, currPos) => { return Mathf.Abs(currPos / 5 - diePoses[^1] / 5) + Mathf.Abs(currPos % 5 - diePoses[^1] % 5) == 1; },
+            (diceData, diePoses, i) => { return ""; },
+            (diceData, diePoses, rank) => { return 5 * rank; }
+        ),
+        new SpellableBoonDiePreset(
+            "OBLIQUUS",
+            false,
+            false,
+            (diceData, diePoses, currPos) => { return Mathf.Abs(currPos / 5 - diePoses[^1] / 5) + Mathf.Abs(currPos % 5 - diePoses[^1] % 5) == 2; },
+            (diceData, diePoses, currPos) => { return Mathf.Abs(currPos / 5 - diePoses[^1] / 5) + Mathf.Abs(currPos % 5 - diePoses[^1] % 5) == 2; },
+            (diceData, diePoses, i) => { return ""; },
+            (diceData, diePoses, rank) => { return 2 * rank; }
+        ),
+        new SpellableBoonDiePreset(
+            "CLAUSULA",
+            false,
+            true,
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, currPos) => { return false; },
+            (diceData, diePoses, i) => { return ""; },
+            (diceData, diePoses, rank) => { return rank; }
+        ),
+        new SpellableBoonDiePreset(
+            "SIMULACRUM",
+            false,
+            true,
+            (diceData, diePoses, currPos) => { return diceData[diePoses[^1]] is LetterDie; },
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, i) => { LetterDie die = (LetterDie)diceData[diePoses[i-1]]; return die.faces[die.currFace].faceText; },
+            (diceData, diePoses, rank) => { return 2 * rank; }
+        ),
+        new SpellableBoonDiePreset(
+            "PROPHETIA",
+            true,
+            false,
+            (diceData, diePoses, currPos) => { return true; },
+            (diceData, diePoses, currPos) => { return diceData[currPos] is LetterDie; },
+            (diceData, diePoses, i) => { if (i == diePoses.Count-1) return ""; else { LetterDie die = (LetterDie)diceData[diePoses[i+1]]; return die.faces[die.currFace].faceText; } },
+            (diceData, diePoses, rank) => { return 2 * rank; }
         ),
     };
 
