@@ -319,8 +319,7 @@ public class SpandoraManager : MonoBehaviour
 
         for (int i = 0; i < 25-diceData.Count; i++)
         {
-            BoonDie die = new(DieColor.Black, 1, 18);
-            // BoonDie die = new(DieColor.Gray, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
+            BoonDie die = new(DieColor.Black, 1, UnityEngine.Random.Range(0, BOON_DICE.Length));
             diceData.Add(die);
         }
     }

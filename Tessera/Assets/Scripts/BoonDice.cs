@@ -151,6 +151,42 @@ public static class BoonDice
             (diceData, diePoses, i) => { if (i == diePoses.Count-1) return ""; else { LetterDie die = (LetterDie)diceData[diePoses[i+1]]; return die.faces[die.currFace].faceText; } },
             (diceData, diePoses, rank) => { return 2 * rank; }
         ),
+        new AttemptSpellBoonDiePreset(
+            "TERMINUS",
+            BonusField.Base,
+            (word, diePoses, rank) => { return 2 * rank * CountDiceInRegion(diePoses, new int[] {0, 1, 2, 3, 4, 5, 9, 10, 14, 15, 19, 20, 21, 22, 23, 24}); },
+            (word, diePoses) => { return CountDiceInRegion(diePoses, new int[] {0, 1, 2, 3, 4, 5, 9, 10, 14, 15, 19, 20, 21, 22, 23, 24}) > 0; }
+        ),
+        new AttemptSpellBoonDiePreset(
+            "MEDIUS",
+            BonusField.Base,
+            (word, diePoses, rank) => { return 2 * rank * CountDiceInRegion(diePoses, new int[] {6, 7, 8, 11, 12, 13, 16, 17, 18}); },
+            (word, diePoses) => { return CountDiceInRegion(diePoses, new int[] {6, 7, 8, 11, 12, 13, 16, 17, 18}) > 0; }
+        ),
+        new AttemptSpellBoonDiePreset(
+            "COR",
+            BonusField.Base,
+            (word, diePoses, rank) => { return 5 * rank; },
+            (word, diePoses) => { return diePoses.Contains(12); }
+        ),
+        new AttemptSpellBoonDiePreset(
+            "AES",
+            BonusField.Mult,
+            (word, diePoses, rank) => { return Mathf.Max(3 * VowelsMinusConsonants(word), 0); },
+            (word, diePoses) => { return VowelsMinusConsonants(word) > 0; }
+        ),
+        new AttemptSpellBoonDiePreset(
+            "CHALYBE",
+            BonusField.Base,
+            (word, diePoses, rank) => { return Mathf.Max(-3 * VowelsMinusConsonants(word), 0); },
+            (word, diePoses) => { return VowelsMinusConsonants(word) < 0; }
+        ),
+        new AttemptSpellBoonDiePreset(
+            "SOCIUS",
+            BonusField.Mult,
+            (word, diePoses, rank) => { return rank * TILE_VALUES[word[0]]; },
+            (word, diePoses) => { return word[0] == word[^1]; }
+        ),
     };
 
     private static int CountDoubleLetters(string word, List<int> diePoses)
@@ -198,6 +234,30 @@ public static class BoonDice
                     intersections.Add(intersection);
                 }
             }
+        }
+        return value;
+    }
+
+    private static int CountDiceInRegion(List<int> diePoses, int[] region)
+    {
+        int value = 0;
+        foreach (int diePos in diePoses)
+        {
+            if (region.Contains(diePos))
+            {
+                value += 1;
+            }
+        }
+        return value;
+    }
+
+    private static int VowelsMinusConsonants(string word)
+    {
+        char[] vowels = { 'A', 'E', 'I', 'O', 'U' };
+        int value = 0;
+        foreach (char letter in word)
+        {
+            value += vowels.Contains(letter) ? 1 : -1;
         }
         return value;
     }
